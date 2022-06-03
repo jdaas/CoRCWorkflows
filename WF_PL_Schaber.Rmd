@@ -1,0 +1,135 @@
+---
+title: 'Profile Likelihood: Example Model'
+author: "Johanna Daas"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.asp = 10/16,
+  out.width = "100%",
+  error = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+set.seed(1)
+```
+
+# Setup
+First, load the libraries needed for the workflow
+```{r,  message = FALSE}
+library(tidyverse)
+library(CoRC)
+```
+
+# Input
+Put in all variables needed to customise the workflow
+
+Put in the path to the model (SBML), as url or local path (as string) and load the model. Use `loadModel()` for .cps models.
+```{r}
+modelPathSBML <- "./Models/Schaber2012SUP_model.xml"
+model         <- loadSBML(modelPathSBML)
+```
+
+Load the data into the variable `data`.
+```{r}
+data <- read.csv("./Data/Schaber2012SUP_data2", sep = ",")
+```
+
+Define experiment(s) for Parameter Estimation. For multiple experiments use list of `defineExperiments()`.
+```{r}
+pe_experiments <- defineExperiments(
+  data          = data,
+  type          = c("time", "dependent", "ignore"),
+  mapping       = c(NA, "{Values[TpFit]}", NA),
+  weight_method = "mean_square"
+)
+```
+
+Set Parameter Estimation Parameters. For more parameters, copy the `defineParameterEstimationParameter()` function and append the list, or use the `make_pe_param()` function defined in utils and run it on the parameters you want to add.
+```{r}
+# pe_parameters <- list(
+#  defineParameterEstimationParameter(
+#   ref = "",
+#   start_value = "",
+#   lower_bound = "",
+#   upper_bound = ""
+# ))
+
+# Or use the functions defined in utils and run it on the parameters you want to add
+pe_parameters <- lapply(parameter(), make_pe_param, lower = 0.75, upper = 30)
+
+```
+
+Set Parameter Estimation Settings.
+```{r}
+pe_randomize_start_values <- FALSE
+pe_update_model           <- FALSE
+
+pe_method <- setParameterEstimationSettings(
+  method = "LevenbergMarquardt"
+)
+```
+
+Set Parameter for Profile Likelihood. For more parameters, copy the `defineParameterEstimationParameter()` function and append the list, or use the `make_pe_param()` function defined in utils and run it on the parameters you want to add (see above).
+```{r}
+pl_parameters <- lapply(parameter(), make_pe_param, lower = 0.75, upper = 30)
+
+```
+
+Choose maximum number of steps for Profile Likelihood.
+```{r}
+max_steps     <- 30
+```
+
+
+Do you want to save the result as a RDS object? Also give the file, where you want to save it.
+```{r}
+save <- TRUE
+file <- "PL_Schaber"
+```
+
+# Workflow
+This should generally not need to be changed, only if the workflow is to be changed more generally.
+```{r}
+PL_result <- runProfileLikelihood(
+  model                     = model,
+  pl_parameters             = pl_parameters,
+  max_steps                 = max_steps,
+  pe_parameters             = pe_parameters,
+  pe_experiments            = pe_experiments,
+  pe_method                 = pe_method,
+  pe_update_model           = pe_update_model,
+  pe_randomize_start_values = pe_randomize_start_values
+)
+
+if (save){
+  saveRDS(PL_result, 
+          file = file)
+}
+
+```
+
+# Output
+This workflow produces the following output:
+```{r}
+printLikelihoodProfile(PL_result)
+```
+
+## Utils
+Creates a function for easy Parameter Estimation Parameter Usage:
+```{r}
+make_pe_param  <- function(name, upper, lower) {
+  value_ref <- parameter_strict(name, reference = "Value")
+  value     <- getValue(value_ref)
+  defineParameterEstimationParameter( ref         = value_ref,
+                                      start_value = value,
+                                      lower_bound = value*lower,
+                                      upper_bound = value*upper)
+  
+}
+```
+

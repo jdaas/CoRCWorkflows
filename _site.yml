@@ -1,0 +1,45 @@
+name: "Workflows with the Copasi R Connector (CoRC)"
+navbar:
+  title: "Workflow"
+  left:
+    - text: ""
+      href: index.html
+    - text: "Examples"
+      menu:
+        - text: "Empty Workflow"
+          href: WF_empty.html
+        - text: "Example Workflow"
+          href: WF_example.html
+    - text: "Profile Likelihood"
+      menu:
+        - text: "Model 1: Example"
+          href: WF_PL_Schaber.html
+        - text: "Model 2: Hepatitis C"
+        - text: "Model 3: Circadian Clock"
+    - text: "Sigma Point Method"
+      menu:
+        - text: "Model 1: Example"
+          href: WF_SP_Schaber.html
+        - text: "Model 2: Hepatitis C"
+         # href: WF_SP_Aston.html
+        - text: "Model 3: Circadian Clock"
+         # href: WF_SP_Leloup.html
+    - text: "Sensitivity Analysis"
+      menu:
+        - text: "Model 1: Example"
+          href: WF_Sens_Schaber.html
+        - text: "Model 2: Hepatitis C"
+          #href: WF_Sens_Aston.html
+        - text: "Model 3: Circadian Clock"
+  right:
+    - text: "CoRC"
+      href: https://jpahle.github.io/CoRC/
+    - text: "Source Code"
+      icon: fa-github
+      href: https://github.com/jdaas/CoRCWorkflows
+output_dir: "Docs"
+exclude: ["NewTasks", "Data", "Models"]
+output:
+  html_document:
+    theme: cosmo
+    highlight: textmate

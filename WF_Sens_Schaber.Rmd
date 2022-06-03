@@ -1,0 +1,101 @@
+---
+title: "Sensitivity: Example Model"
+author: "Johanna Daas"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.asp = 10/16,
+  out.width = "100%",
+  error = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+set.seed(1)
+```
+
+# Setup
+First, load the libraries needed for the workflow
+```{r,  message = FALSE}
+library(tidyverse)
+library(CoRC)
+```
+
+# Input
+Put in all variables needed to customise the workflow
+
+Put in the path to the model (SBML), as url or local path (as string) and load the model. Use `loadModel()` for .cps models.
+```{r}
+modelPathSBML   <- "./Models/Schaber2012SUP_model.xml"
+model           <- loadSBML(modelPathSBML)
+```
+
+Define the subtask. Has to be one of "SteadyState", "TimeSeries", "ParameterEstimation", "Optimization". 
+
+```{r}
+subtask         <- "SteadyState"
+```
+
+Set Sensitivity Method settings.
+```{r}
+delta_factor    <- 0.001
+delta_minimum   <- 1E-12
+```
+
+Define the effect (can be any of `r enum_effect`).
+```{r}
+effect          <- "NON_CONST_METAB_CONCENTRATIONS"
+```
+
+Define the cause and (if applicable) secondary cause (can be any of "SINGLE_OBJECT", "ALL_LOCAL_PARAMETER_VALUES", "ALL_PARAMETER_VALUES", "METAB_INITIAL_CONCENTRATIONS").
+```{r}
+cause           <- "ALL_PARAMETER_VALUES"
+secondary_cause <- NULL
+```
+
+Do you want to save the result as a RDS object? Also give the file, where you want to save it.
+```{r}
+save           <- TRUE
+file           <- "Sens_Schaber"
+```
+
+# Workflow
+This should generally not need to be changed, only if the workflow is to be changed more generally.
+```{r}
+Sens_result <- runSensitivities(model           = model, 
+                                subtask         = subtask, 
+                                delta_factor    = delta_factor,
+                                delta_minimum   = delta_minimum,
+                                effect          = effect,
+                                cause           = cause,
+                                secondary_cause = secondary_cause)
+
+if (save){
+  saveRDS(Sens_result, 
+          file = file)
+}
+
+```
+
+# Output
+This workflow produces the following output:
+
+ Result:
+```{r}
+Sens_result$main$annotated_result
+```
+
+Scaled  Result:
+```{r}
+Sens_result$main$annotated_scaled_result
+```
+
+Collapsed Result:
+```{r}
+Sens_result$main$annotated_collapsed_result
+```
+

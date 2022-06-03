@@ -1,0 +1,45 @@
+---
+title: "An empty workflow"
+author: "Johanna Daas"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.asp = 10/16,
+  out.width = "100%",
+  error = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+set.seed(1)
+```
+
+# Setup
+First, load the libraries needed for the workflow.
+```{r,  message = FALSE}
+library(CoRC)
+#...
+```
+
+# Input
+Put in all variables needed to customise the workflow.
+```{r}
+# Put in all variables
+```
+
+# Workflow
+This should generally not need to be changed, only if the workflow is to be changed more generally.
+```{r}
+# Let the workflow work
+```
+
+# Output
+This workflow produces the following output:
+```{r}
+# Here some output
+```
+

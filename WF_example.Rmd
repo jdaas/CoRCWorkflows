@@ -1,0 +1,76 @@
+---
+title: "Timecourse of a Model: Autoplotting and saving as .jpeg"
+author: "Johanna Daas"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.asp = 10/16,
+  out.width = "100%",
+  error = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+set.seed(1)
+```
+
+# Setup
+First, load the libraries needed for the workflow
+```{r,  message = FALSE, results ='hide'}
+library(tidyverse)
+library(CoRC)
+```
+
+# Input
+Put in all variables needed to customise the workflow
+
+Put in the path to the model (SBML), as url or local path (as string) and load the model. Use `loadModel()` for .cps models.
+```{r}
+modelPathSBML <- "./Models/Schaber2012SUP_model.xml"
+loadSBML(modelPathSBML)
+```
+
+Set the timecourse settings. Further specifications are possible.
+```{r}
+setTimeCourseSettings(duration  = 50,
+                      intervals = 100)
+```
+
+Where should the .jpeg image be saved?
+```{r}
+jpegPath <- "timecourse.jpeg"
+```
+
+
+# Workflow
+This should generally not need to be changed, only if the workflow is to be changed more generally.
+```{r}
+# Check if path is already taken:
+if(file.exists(jpegPath)) 
+  stop("Error: This file does already exist.")
+
+# Run time course
+timecourse <- runTimeCourse()
+
+# Autoplot time course
+plot       <- autoplot.copasi_ts(timecourse)
+
+# plot and save as pdf
+jpeg(jpegPath)
+print(plot)
+dev.off()
+
+```
+
+# Output
+This workflow produces the following output:
+```{r}
+# Show the Plot
+plot
+```
+
+and saves the image in the file `r jpegPath`.
