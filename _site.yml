@@ -37,7 +37,7 @@ navbar:
     - text: "Source Code"
       icon: fa-github
       href: https://github.com/jdaas/CoRCWorkflows
-output_dir: "Docs"
+output_dir: "docs"
 exclude: ["NewTasks", "Data", "Models"]
 output:
   html_document:
