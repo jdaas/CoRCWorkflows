@@ -89,12 +89,13 @@ max_steps     <- 30
 Do you want to save the result as a RDS object? Also give the file, where you want to save it.
 ```{r}
 save <- TRUE
-file <- "PL_Schaber"
+file <- "docs/PL_Schaber"
 ```
 
 # Workflow
 This should generally not need to be changed, only if the workflow is to be changed more generally.
 ```{r}
+# Run Profile Likelihood
 PL_result <- runProfileLikelihood(
   model                     = model,
   pl_parameters             = pl_parameters,
@@ -106,6 +107,7 @@ PL_result <- runProfileLikelihood(
   pe_randomize_start_values = pe_randomize_start_values
 )
 
+# Save Result
 if (save){
   saveRDS(PL_result, 
           file = file)

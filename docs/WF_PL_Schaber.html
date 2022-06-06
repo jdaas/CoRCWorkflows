@@ -272,7 +272,9 @@ $(document).ready(function () {
     <li>
       <a href="WF_PL_Schaber.html">Model 1: Example</a>
     </li>
-    <li class="dropdown-header">Model 2: Hepatitis C</li>
+    <li>
+      <a href="WF_PL_Aston.html">Model 2: Hepatitis C</a>
+    </li>
     <li class="dropdown-header">Model 3: Circadian Clock</li>
   </ul>
 </li>
@@ -286,7 +288,9 @@ $(document).ready(function () {
     <li>
       <a href="WF_SP_Schaber.html">Model 1: Example</a>
     </li>
-    <li class="dropdown-header">Model 2: Hepatitis C</li>
+    <li>
+      <a href="WF_SP_Aston.html">Model 2: Hepatitis C</a>
+    </li>
     <li class="dropdown-header">Model 3: Circadian Clock</li>
   </ul>
 </li>
@@ -300,7 +304,9 @@ $(document).ready(function () {
     <li>
       <a href="WF_Sens_Schaber.html">Model 1: Example</a>
     </li>
-    <li class="dropdown-header">Model 2: Hepatitis C</li>
+    <li>
+      <a href="WF_Sens_Aston.html">Model 2: Hepatitis C</a>
+    </li>
     <li class="dropdown-header">Model 3: Circadian Clock</li>
   </ul>
 </li>
@@ -376,12 +382,13 @@ pe_method &lt;- setParameterEstimationSettings(
 <pre class="r"><code>max_steps     &lt;- 30</code></pre>
 <p>Do you want to save the result as a RDS object? Also give the file, where you want to save it.</p>
 <pre class="r"><code>save &lt;- TRUE
-file &lt;- &quot;PL_Schaber&quot;</code></pre>
+file &lt;- &quot;docs/PL_Schaber&quot;</code></pre>
 </div>
 <div id="workflow" class="section level1">
 <h1>Workflow</h1>
 <p>This should generally not need to be changed, only if the workflow is to be changed more generally.</p>
-<pre class="r"><code>PL_result &lt;- runProfileLikelihood(
+<pre class="r"><code># Run Profile Likelihood
+PL_result &lt;- runProfileLikelihood(
   model                     = model,
   pl_parameters             = pl_parameters,
   max_steps                 = max_steps,
@@ -394,6 +401,7 @@ file &lt;- &quot;PL_Schaber&quot;</code></pre>
 #&gt; [1] &quot;Creating profile of parameter {(T -&gt; Tp; S).k}&quot;
 #&gt; [1] &quot;Creating profile of parameter {(Tp -&gt; T).k1}&quot;
 
+# Save Result
 if (save){
   saveRDS(PL_result, 
           file = file)

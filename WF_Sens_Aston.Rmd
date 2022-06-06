@@ -1,0 +1,117 @@
+---
+title: "Sensitivity: Hepatitis C"
+author: "Johanna Daas"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.asp = 10/16,
+  out.width = "100%",
+  error = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+set.seed(1)
+
+```
+This workflow gives out the collapsed result for 4 models.
+
+# Setup
+First, load the libraries needed for the workflow
+```{r,  message = FALSE}
+library(tidyverse)
+library(CoRC)
+```
+
+# Input
+Put in all variables needed to customise the workflow
+
+Put in the path to the model (.cps), as a local path (as string) and load the model. Use `loadSBML()` for sbml models.
+```{r}
+# Load all models
+model_PVR  <- loadModel("Models/Aston2018PVR_model.cps")
+model_BT   <- loadModel("Models/Aston2018Breakthrough_model.cps")
+model_Null <- loadModel("Models/Aston2018NullResponse_model.cps")
+model_TriP <- loadModel("Models/Aston2018Triphasic_model.cps")
+
+# Make a list of models
+models     <- list(model_PVR, model_BT, model_Null, model_TriP)
+
+```
+
+Define the subtask. Has to be one of "SteadyState", "TimeSeries", "ParameterEstimation", "Optimization". 
+
+```{r}
+subtask         <- "TimeSeries"
+```
+
+Set Sensitivity Method settings.
+```{r}
+delta_factor    <- 0.001
+delta_minimum   <- 1E-12
+```
+
+Define the effect (can be any of `r enum_effect`).
+```{r}
+effect          <- "NON_CONST_METAB_CONCENTRATIONS"
+```
+
+Define the cause and (if applicable) secondary cause (can be any of "SINGLE_OBJECT", "ALL_LOCAL_PARAMETER_VALUES", "ALL_PARAMETER_VALUES", "METAB_INITIAL_CONCENTRATIONS").
+```{r}
+cause           <- "ALL_PARAMETER_VALUES"
+secondary_cause <- NULL
+```
+
+Do you want to save the result as a RDS object? Also give the file, where you want to save it.
+```{r}
+save           <- TRUE
+file           <- "docs/Sens_Aston"
+```
+
+# Workflow
+This should generally not need to be changed, only if the workflow is to be changed more generally.
+```{r}
+# Set up output
+result <- matrix(nrow = 8, ncol = length(models))
+
+# Run Sensitivities for all models
+for (i in 1:length(models)){
+  sens_result <- runSensitivities(model           = models[[i]], 
+                                  subtask         = subtask, 
+                                  delta_factor    = delta_factor,
+                                  delta_minimum   = delta_minimum,
+                                  effect          = effect,
+                                  cause           = cause,
+                                  secondary_cause= secondary_cause)
+  result[,i] = sens_result$main$annotated_collapsed_result
+}
+
+# Reshape data for better visualisation
+rownames(result) <- rownames(sens_result$main$annotated_collapsed_result)
+colnames(result) <- c("PVR", "Breakthrough", "Nullresponse", "Triphasic")
+
+Sens_result  <- tibble(PVR  = Sens_PVR$main$annotated_collapsed_result,
+                       BT   = Sens_BT$main$annotated_collapsed_result,
+                       Null = Sens_Null$main$annotated_collapsed_result,
+                       TriP = Sens_TriP$main$annotated_collapsed_result)
+
+
+# Save file
+if (save){
+  saveRDS(Sens_result, 
+          file = file)
+}
+
+```
+
+# Output
+This workflow produces the following output:
+
+```{r}
+result
+```
+

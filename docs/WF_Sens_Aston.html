@@ -9,9 +9,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
+<meta name="author" content="Johanna Daas" />
 
 
-<title>Workflows with the Copasi R Connector (CoRC)</title>
+<title>Sensitivity: Hepatitis C</title>
 
 <script src="site_libs/header-attrs-2.9/header-attrs.js"></script>
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
@@ -330,19 +331,93 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Workflows with the Copasi R Connector (CoRC)</h1>
+<h1 class="title toc-ignore">Sensitivity: Hepatitis C</h1>
+<h4 class="author">Johanna Daas</h4>
 
 </div>
 
 
-<p>The workflows on this website are created during the cause of my master thesis. Two new methods were added to the <a href="https://jpahle.github.io/CoRC">CoRC</a> package: The Profile Likelihood method and the Sensitivity Analysis. Additionally new workflows with the Sigma Point Method are presented.</p>
-<div id="authors" class="section level2">
-<h2>Authors</h2>
-<p>Johanna Daas</p>
+<p>This workflow gives out the collapsed result for 4 models.</p>
+<div id="setup" class="section level1">
+<h1>Setup</h1>
+<p>First, load the libraries needed for the workflow</p>
+<pre class="r"><code>library(tidyverse)
+library(CoRC)</code></pre>
 </div>
-<div id="licence" class="section level2">
-<h2>Licence</h2>
-<p>All the material here is published under the <a href="https://creativecommons.org/licenses/by/4.0/legalcode.txt">Creative Commons BY 4.0 licence</a>.</p>
+<div id="input" class="section level1">
+<h1>Input</h1>
+<p>Put in all variables needed to customise the workflow</p>
+<p>Put in the path to the model (.cps), as a local path (as string) and load the model. Use <code>loadSBML()</code> for sbml models.</p>
+<pre class="r"><code># Load all models
+model_PVR  &lt;- loadModel(&quot;Models/Aston2018PVR_model.cps&quot;)
+model_BT   &lt;- loadModel(&quot;Models/Aston2018Breakthrough_model.cps&quot;)
+model_Null &lt;- loadModel(&quot;Models/Aston2018NullResponse_model.cps&quot;)
+model_TriP &lt;- loadModel(&quot;Models/Aston2018Triphasic_model.cps&quot;)
+
+# Make a list of models
+models     &lt;- list(model_PVR, model_BT, model_Null, model_TriP)</code></pre>
+<p>Define the subtask. Has to be one of “SteadyState”, “TimeSeries”, “ParameterEstimation”, “Optimization”.</p>
+<pre class="r"><code>subtask         &lt;- &quot;TimeSeries&quot;</code></pre>
+<p>Set Sensitivity Method settings.</p>
+<pre class="r"><code>delta_factor    &lt;- 0.001
+delta_minimum   &lt;- 1E-12</code></pre>
+<p>Define the effect (can be any of EMPTY_LIST, SINGLE_OBJECT, ALL_VARIABLES, NON_CONST_METAB_CONCENTRATIONS, NON_CONST_METAB_NUMBERS, METAB_CONC_RATES, METAB_PART_RATES, NON_CONST_GLOBAL_PARAMETER_VALUES, REACTION_PART_FLUXES, REDUCED_JACOBIAN_EV_RE, REDUCED_JACOBIAN_EV_IM).</p>
+<pre class="r"><code>effect          &lt;- &quot;NON_CONST_METAB_CONCENTRATIONS&quot;</code></pre>
+<p>Define the cause and (if applicable) secondary cause (can be any of “SINGLE_OBJECT”, “ALL_LOCAL_PARAMETER_VALUES”, “ALL_PARAMETER_VALUES”, “METAB_INITIAL_CONCENTRATIONS”).</p>
+<pre class="r"><code>cause           &lt;- &quot;ALL_PARAMETER_VALUES&quot;
+secondary_cause &lt;- NULL</code></pre>
+<p>Do you want to save the result as a RDS object? Also give the file, where you want to save it.</p>
+<pre class="r"><code>save           &lt;- TRUE
+file           &lt;- &quot;docs/Sens_Aston&quot;</code></pre>
+</div>
+<div id="workflow" class="section level1">
+<h1>Workflow</h1>
+<p>This should generally not need to be changed, only if the workflow is to be changed more generally.</p>
+<pre class="r"><code># Set up output
+result &lt;- matrix(nrow = 8, ncol = length(models))
+
+# Run Sensitivities for all models
+for (i in 1:length(models)){
+  sens_result &lt;- runSensitivities(model           = models[[i]], 
+                                  subtask         = subtask, 
+                                  delta_factor    = delta_factor,
+                                  delta_minimum   = delta_minimum,
+                                  effect          = effect,
+                                  cause           = cause,
+                                  secondary_cause= secondary_cause)
+  result[,i] = sens_result$main$annotated_collapsed_result
+}
+
+# Reshape data for better visualisation
+rownames(result) &lt;- rownames(sens_result$main$annotated_collapsed_result)
+colnames(result) &lt;- c(&quot;PVR&quot;, &quot;Breakthrough&quot;, &quot;Nullresponse&quot;, &quot;Triphasic&quot;)
+
+Sens_result  &lt;- tibble(PVR  = Sens_PVR$main$annotated_collapsed_result,
+                       BT   = Sens_BT$main$annotated_collapsed_result,
+                       Null = Sens_Null$main$annotated_collapsed_result,
+                       TriP = Sens_TriP$main$annotated_collapsed_result)
+#&gt; Error in eval_tidy(xs[[j]], mask): Objekt &#39;Sens_PVR&#39; nicht gefunden
+
+
+# Save file
+if (save){
+  saveRDS(Sens_result, 
+          file = file)
+}</code></pre>
+</div>
+<div id="output" class="section level1">
+<h1>Output</h1>
+<p>This workflow produces the following output:</p>
+<pre class="r"><code>result
+#&gt;                                       PVR Breakthrough Nullresponse   Triphasic
+#&gt; Values[s].InitialValue        0.999652732 1.528531e-07 0.2188977015 0.119805644
+#&gt; Values[r_T_Tmax].InitialValue 0.013428398 4.140327e-03 0.6955497119 0.845481027
+#&gt; Values[r_T_d].InitialValue    0.171226079 1.718108e+00 0.0585342258 0.194995426
+#&gt; Values[R].InitialValue        0.001065302 4.693949e-07 0.1609618741 0.105987060
+#&gt; Values[D].InitialValue        0.170799740 1.716128e+00 0.0446922981 0.184704936
+#&gt; Values[beta*].InitialValue    0.018219683 1.176302e+00 0.0059774746 0.001554009
+#&gt; Values[pstar].InitialValue    1.002044519 1.949354e+00 1.0000571129 1.000021596
+#&gt; Values[c].InitialValue        1.007333690 1.489204e+00 0.0001348762 0.503589470</code></pre>
 </div>
 
 

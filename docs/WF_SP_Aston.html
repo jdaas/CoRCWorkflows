@@ -9,9 +9,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
+<meta name="author" content="Johanna Daas" />
 
 
-<title>Workflows with the Copasi R Connector (CoRC)</title>
+<title>Sigma Point: Hepatitis C Model</title>
 
 <script src="site_libs/header-attrs-2.9/header-attrs.js"></script>
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
@@ -330,19 +331,146 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Workflows with the Copasi R Connector (CoRC)</h1>
+<h1 class="title toc-ignore">Sigma Point: Hepatitis C Model</h1>
+<h4 class="author">Johanna Daas</h4>
 
 </div>
 
 
-<p>The workflows on this website are created during the cause of my master thesis. Two new methods were added to the <a href="https://jpahle.github.io/CoRC">CoRC</a> package: The Profile Likelihood method and the Sensitivity Analysis. Additionally new workflows with the Sigma Point Method are presented.</p>
-<div id="authors" class="section level2">
-<h2>Authors</h2>
-<p>Johanna Daas</p>
+<div id="setup" class="section level1">
+<h1>Setup</h1>
+<p>First, load the libraries needed for the workflow</p>
+<pre class="r"><code>library(tidyverse)
+library(CoRC)</code></pre>
 </div>
-<div id="licence" class="section level2">
-<h2>Licence</h2>
-<p>All the material here is published under the <a href="https://creativecommons.org/licenses/by/4.0/legalcode.txt">Creative Commons BY 4.0 licence</a>.</p>
+<div id="input" class="section level1">
+<h1>Input</h1>
+<p>Put in all variables needed to customise the workflow</p>
+<p>Put in the path to the model (.cps), as local path (as string) and load the model. Use <code>loadSBML()</code> for sbml models.</p>
+<pre class="r"><code>modelPath &lt;- &quot;./Models/Aston2018Breakthrough_model.cps&quot;
+model     &lt;- loadModel(modelPath)</code></pre>
+<p>Load the data into the variable <code>data</code>.</p>
+<pre class="r"><code>data &lt;- read.csv(&quot;Data/Aston2018_data2.csv&quot;, sep = &quot; &quot;)</code></pre>
+<p>Define experiment(s) for Parameter Estimation. For multiple experiments use list of <code>defineExperiments()</code>.</p>
+<pre class="r"><code>pe_experiments &lt;- defineExperiments(
+  data = data,
+  type = c(&quot;time&quot;, &quot;dependent&quot;),
+  mapping = c(NA, species(&quot;V&quot;, reference = &quot;Concentration&quot;)),
+  weight_method = &quot;mean_square&quot;
+)</code></pre>
+<p>Use the <code>addParameterEstimationParameter()</code> function to add Parameter Estimation Parameters. Alternatively, use the <code>add_pe_param_global()</code> function defined in utils for adding global Quantities as parameters.</p>
+<pre class="r"><code>lapply(getGlobalQuantities()$key, add_pe_param_global, lower = 100, upper = 100)</code></pre>
+<p>Set Parameter Estimation Settings.</p>
+<pre class="r"><code>setParameterEstimationSettings(
+  method = &quot;LevenbergMarquardt&quot;
+)</code></pre>
+<p>Set Sigma Point Method Settings. Choose alpha, beta, kappa, and the measurement error (var)</p>
+<pre class="r"><code>alpha &lt;- 0.5
+beta &lt;- 2
+kappa &lt;- 3
+measurement_error &lt;- 0.1</code></pre>
+<p>Do you want to save the result as a RDS object? Also give the file, where you want to save it.</p>
+<pre class="r"><code>save &lt;- TRUE
+file &lt;- &quot;docs/SP_Aston&quot;</code></pre>
+</div>
+<div id="workflow" class="section level1">
+<h1>Workflow</h1>
+<p>This should generally not need to be changed, only if the workflow is to be changed more generally.</p>
+<pre class="r"><code># Run Sigma Point Method
+result &lt;-
+  runSigmaPoint(
+    alpha             = alpha,
+    beta              = beta,
+    kappa             = kappa,
+    var               = measurement_error,
+    experiments       = pe_experiments,
+    mean_fit_as_basis = TRUE
+  )
+
+# Save result
+if (save){
+  saveRDS(result, 
+          file = file)
+}</code></pre>
+</div>
+<div id="output" class="section level1">
+<h1>Output</h1>
+<p>This workflow produces the following output:</p>
+<pre class="r"><code>result$sp_mean
+#&gt;        Values[s].InitialValue Values[r_T_Tmax].InitialValue    Values[r_T_d].InitialValue 
+#&gt;                 -3.806190e-02                  2.577607e+04                  2.931675e-03 
+#&gt;        Values[R].InitialValue        Values[D].InitialValue    Values[beta*].InitialValue 
+#&gt;                  2.399477e+05                  5.612107e+02                  7.715511e-09 
+#&gt;    Values[pstar].InitialValue        Values[c].InitialValue 
+#&gt;                  8.629680e+01                  3.484531e+00
+result$sp_cov_matrix
+#&gt;                               Values[s].InitialValue Values[r_T_Tmax].InitialValue
+#&gt; Values[s].InitialValue                  6.349302e-03                  4.781556e+03
+#&gt; Values[r_T_Tmax].InitialValue           4.781556e+03                  4.207596e+09
+#&gt; Values[r_T_d].InitialValue              7.937299e-06                  6.785358e+00
+#&gt; Values[R].InitialValue                 -3.898922e+04                 -3.091264e+10
+#&gt; Values[D].InitialValue                  1.715471e+00                  1.462854e+06
+#&gt; Values[beta*].InitialValue             -6.248146e-11                 -5.318492e-05
+#&gt; Values[pstar].InitialValue              7.139463e-01                  6.068387e+05
+#&gt; Values[c].InitialValue                 -9.102983e-03                 -7.702077e+03
+#&gt;                               Values[r_T_d].InitialValue Values[R].InitialValue
+#&gt; Values[s].InitialValue                      7.937299e-06          -3.898922e+04
+#&gt; Values[r_T_Tmax].InitialValue               6.785358e+00          -3.091264e+10
+#&gt; Values[r_T_d].InitialValue                  1.124024e-08          -5.248890e+01
+#&gt; Values[R].InitialValue                     -5.248890e+01           2.968827e+11
+#&gt; Values[D].InitialValue                      2.418738e-03          -1.146623e+07
+#&gt; Values[beta*].InitialValue                 -8.602220e-14           4.019171e-04
+#&gt; Values[pstar].InitialValue                  9.917123e-04          -4.685236e+06
+#&gt; Values[c].InitialValue                     -1.267008e-05           5.869745e+04
+#&gt;                               Values[D].InitialValue Values[beta*].InitialValue
+#&gt; Values[s].InitialValue                  1.715471e+00              -6.248146e-11
+#&gt; Values[r_T_Tmax].InitialValue           1.462854e+06              -5.318492e-05
+#&gt; Values[r_T_d].InitialValue              2.418738e-03              -8.602220e-14
+#&gt; Values[R].InitialValue                 -1.146623e+07               4.019171e-04
+#&gt; Values[D].InitialValue                  5.234561e+02              -1.860457e-08
+#&gt; Values[beta*].InitialValue             -1.860457e-08               6.828131e-19
+#&gt; Values[pstar].InitialValue              2.142627e+02              -7.756204e-09
+#&gt; Values[c].InitialValue                 -2.742847e+00               9.887801e-11
+#&gt;                               Values[pstar].InitialValue Values[c].InitialValue
+#&gt; Values[s].InitialValue                      7.139463e-01          -9.102983e-03
+#&gt; Values[r_T_Tmax].InitialValue               6.068387e+05          -7.702077e+03
+#&gt; Values[r_T_d].InitialValue                  9.917123e-04          -1.267008e-05
+#&gt; Values[R].InitialValue                     -4.685236e+06           5.869745e+04
+#&gt; Values[D].InitialValue                      2.142627e+02          -2.742847e+00
+#&gt; Values[beta*].InitialValue                 -7.756204e-09           9.887801e-11
+#&gt; Values[pstar].InitialValue                  8.887328e+01          -1.122692e+00
+#&gt; Values[c].InitialValue                     -1.122692e+00           1.487077e-02</code></pre>
+<div id="utils" class="section level2">
+<h2>Utils</h2>
+<p>Creates a function for easy Parameter Estimation Parameter Usage:</p>
+<pre class="r"><code>make_pe_param  &lt;- function(name, upper, lower) {
+  value_ref &lt;- parameter_strict(name, reference = &quot;Value&quot;)
+  value     &lt;- getValue(value_ref)
+  defineParameterEstimationParameter( ref         = value_ref,
+                                      start_value = value,
+                                      lower_bound = value*lower,
+                                      upper_bound = value*upper)
+  
+}
+
+make_pe_param_global &lt;- function(name, upper, lower){
+  value     &lt;- getGlobalQuantities(key = name)$initial_value
+  value_ref &lt;- getGlobalQuantityReferences(key = name)$initial_value
+  defineParameterEstimationParameter(ref         = value_ref,
+                                     start_value = value,
+                                     lower_bound = value-value*lower,
+                                     upper_bound = value+value*upper)
+}
+
+add_pe_param_global &lt;- function(name, upper, lower){
+  value     &lt;- getGlobalQuantities(key = name)$initial_value
+  value_ref &lt;- getGlobalQuantityReferences(key = name)$initial_value
+  addParameterEstimationParameter(   ref         = value_ref,
+                                     start_value = value,
+                                     lower_bound = value-value*lower,
+                                     upper_bound = value+value*upper)
+}</code></pre>
+</div>
 </div>
 
 

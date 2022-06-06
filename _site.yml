@@ -15,22 +15,25 @@ navbar:
         - text: "Model 1: Example"
           href: WF_PL_Schaber.html
         - text: "Model 2: Hepatitis C"
+          href: WF_PL_Aston.html
         - text: "Model 3: Circadian Clock"
+          #href: WF_PL_Leloup.html
     - text: "Sigma Point Method"
       menu:
         - text: "Model 1: Example"
           href: WF_SP_Schaber.html
         - text: "Model 2: Hepatitis C"
-         # href: WF_SP_Aston.html
+          href: WF_SP_Aston.html
         - text: "Model 3: Circadian Clock"
-         # href: WF_SP_Leloup.html
+          #href:  WF_SP_Leloup.html
     - text: "Sensitivity Analysis"
       menu:
         - text: "Model 1: Example"
           href: WF_Sens_Schaber.html
         - text: "Model 2: Hepatitis C"
-          #href: WF_Sens_Aston.html
+          href: WF_Sens_Aston.html
         - text: "Model 3: Circadian Clock"
+          #href: WF_Sens_Leloup.html
   right:
     - text: "CoRC"
       href: https://jpahle.github.io/CoRC/
@@ -38,7 +41,7 @@ navbar:
       icon: fa-github
       href: https://github.com/jdaas/CoRCWorkflows
 output_dir: "docs"
-exclude: ["NewTasks", "Data", "Models"]
+exclude: ["NewTasks", "Data", "Models", "README.md", ".gitattributes", "CoRCWorkflows.Rproj", "WF_PL_Leloup.Rmd"]
 output:
   html_document:
     theme: cosmo

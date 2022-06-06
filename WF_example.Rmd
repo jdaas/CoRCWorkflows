@@ -42,7 +42,7 @@ setTimeCourseSettings(duration  = 50,
 
 Where should the .jpeg image be saved?
 ```{r}
-jpegPath <- "timecourse.jpeg"
+jpegPath <- "docs/timecourse.jpeg"
 ```
 
 

@@ -1,0 +1,139 @@
+---
+title: "Sigma Point: Hepatitis C Model"
+author: "Johanna Daas"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.asp = 10/16,
+  out.width = "100%",
+  error = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+set.seed(1)
+```
+
+# Setup
+First, load the libraries needed for the workflow
+```{r,  message = FALSE}
+library(tidyverse)
+library(CoRC)
+```
+
+# Input
+Put in all variables needed to customise the workflow
+
+
+Put in the path to the model (.cps), as local path (as string) and load the model. Use `loadSBML()` for sbml models.
+```{r}
+modelPath <- "./Models/Aston2018Breakthrough_model.cps"
+model     <- loadModel(modelPath)
+```
+
+Load the data into the variable `data`.
+```{r}
+data <- read.csv("Data/Aston2018_data2.csv", sep = " ")
+```
+
+Define experiment(s) for Parameter Estimation. For multiple experiments use list of `defineExperiments()`.
+```{r}
+pe_experiments <- defineExperiments(
+  data = data,
+  type = c("time", "dependent"),
+  mapping = c(NA, species("V", reference = "Concentration")),
+  weight_method = "mean_square"
+)
+```
+
+
+
+Use the `addParameterEstimationParameter()` function to add Parameter Estimation Parameters. Alternatively, use the `add_pe_param_global()` function defined in utils for adding global Quantities as parameters.
+```{r, results='hide'}
+lapply(getGlobalQuantities()$key, add_pe_param_global, lower = 100, upper = 100)
+
+```
+
+Set Parameter Estimation Settings.
+```{r}
+setParameterEstimationSettings(
+  method = "LevenbergMarquardt"
+)
+```
+
+Set Sigma Point Method Settings. Choose alpha, beta, kappa, and the measurement error (var)
+```{r}
+alpha <- 0.5
+beta <- 2
+kappa <- 3
+measurement_error <- 0.1
+```
+
+Do you want to save the result as a RDS object? Also give the file, where you want to save it.
+```{r}
+save <- TRUE
+file <- "docs/SP_Aston"
+```
+
+# Workflow
+This should generally not need to be changed, only if the workflow is to be changed more generally.
+```{r}
+# Run Sigma Point Method
+result <-
+  runSigmaPoint(
+    alpha             = alpha,
+    beta              = beta,
+    kappa             = kappa,
+    var               = measurement_error,
+    experiments       = pe_experiments,
+    mean_fit_as_basis = TRUE
+  )
+
+# Save result
+if (save){
+  saveRDS(result, 
+          file = file)
+}
+```
+
+# Output
+This workflow produces the following output:
+```{r}
+result$sp_mean
+result$sp_cov_matrix
+```
+## Utils
+Creates a function for easy Parameter Estimation Parameter Usage:
+```{r}
+make_pe_param  <- function(name, upper, lower) {
+  value_ref <- parameter_strict(name, reference = "Value")
+  value     <- getValue(value_ref)
+  defineParameterEstimationParameter( ref         = value_ref,
+                                      start_value = value,
+                                      lower_bound = value*lower,
+                                      upper_bound = value*upper)
+  
+}
+
+make_pe_param_global <- function(name, upper, lower){
+  value     <- getGlobalQuantities(key = name)$initial_value
+  value_ref <- getGlobalQuantityReferences(key = name)$initial_value
+  defineParameterEstimationParameter(ref         = value_ref,
+                                     start_value = value,
+                                     lower_bound = value-value*lower,
+                                     upper_bound = value+value*upper)
+}
+
+add_pe_param_global <- function(name, upper, lower){
+  value     <- getGlobalQuantities(key = name)$initial_value
+  value_ref <- getGlobalQuantityReferences(key = name)$initial_value
+  addParameterEstimationParameter(   ref         = value_ref,
+                                     start_value = value,
+                                     lower_bound = value-value*lower,
+                                     upper_bound = value+value*upper)
+}
+```

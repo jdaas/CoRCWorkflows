@@ -60,12 +60,13 @@ secondary_cause <- NULL
 Do you want to save the result as a RDS object? Also give the file, where you want to save it.
 ```{r}
 save           <- TRUE
-file           <- "Sens_Schaber"
+file           <- "docs/Sens_Schaber"
 ```
 
 # Workflow
 This should generally not need to be changed, only if the workflow is to be changed more generally.
 ```{r}
+# Run Sensitivity
 Sens_result <- runSensitivities(model           = model, 
                                 subtask         = subtask, 
                                 delta_factor    = delta_factor,
@@ -74,6 +75,7 @@ Sens_result <- runSensitivities(model           = model,
                                 cause           = cause,
                                 secondary_cause = secondary_cause)
 
+# Save result
 if (save){
   saveRDS(Sens_result, 
           file = file)

@@ -9,9 +9,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
+<meta name="author" content="Johanna Daas" />
 
 
-<title>Workflows with the Copasi R Connector (CoRC)</title>
+<title>Profile Likelihood: Hepatitis C Model</title>
 
 <script src="site_libs/header-attrs-2.9/header-attrs.js"></script>
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
@@ -330,19 +331,137 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Workflows with the Copasi R Connector (CoRC)</h1>
+<h1 class="title toc-ignore">Profile Likelihood: Hepatitis C Model</h1>
+<h4 class="author">Johanna Daas</h4>
 
 </div>
 
 
-<p>The workflows on this website are created during the cause of my master thesis. Two new methods were added to the <a href="https://jpahle.github.io/CoRC">CoRC</a> package: The Profile Likelihood method and the Sensitivity Analysis. Additionally new workflows with the Sigma Point Method are presented.</p>
-<div id="authors" class="section level2">
-<h2>Authors</h2>
-<p>Johanna Daas</p>
+<div id="setup" class="section level1">
+<h1>Setup</h1>
+<p>First, load the libraries needed for the workflow</p>
+<pre class="r"><code>library(tidyverse)
+library(CoRC)</code></pre>
 </div>
-<div id="licence" class="section level2">
-<h2>Licence</h2>
-<p>All the material here is published under the <a href="https://creativecommons.org/licenses/by/4.0/legalcode.txt">Creative Commons BY 4.0 licence</a>.</p>
+<div id="input" class="section level1">
+<h1>Input</h1>
+<p>Put in all variables needed to customise the workflow</p>
+<p>Put in the path to the model (.cps), as local path (as string) and load the model. Use <code>loadSBML()</code> for sbml models.</p>
+<pre class="r"><code>modelPath &lt;- &quot;./Models/Aston2018Breakthrough_model.cps&quot;
+model     &lt;- loadModel(modelPath)</code></pre>
+<p>To use the results from the Sigma Point method, I will load the RDS with the results.</p>
+<pre class="r"><code>SP_result &lt;- readRDS(&quot;docs/SP_Aston&quot;)
+SP_means  &lt;- SP_result$sp_means
+
+# set the Global Quantities to the estimated means
+#setGlobalQuantities(key = getGlobalQuantities()$key, initial_value = SP_means)
+
+# read out Variance of Global Quantities
+SP_cov    &lt;- SP_result$sp_cov_matrix
+SP_var    &lt;- c()
+for (i in 1:nrow(SP_cov)){
+  SP_var[i] &lt;- SP_cov[i,i]
+}
+
+model &lt;- getCurrentModel()</code></pre>
+<p>Load the data into the variable <code>data</code>.</p>
+<pre class="r"><code>data &lt;- read.csv(&quot;Data/Aston2018_data3.csv&quot;, sep = &quot; &quot;)</code></pre>
+<p>Define experiment(s) for Parameter Estimation. For multiple experiments use list of <code>defineExperiments()</code>.</p>
+<pre class="r"><code>pe_experiments &lt;- defineExperiments(
+  data = data,
+  type = c(&quot;time&quot;, &quot;dependent&quot;),
+  mapping = c(NA, species(&quot;V&quot;, reference = &quot;Concentration&quot;)),
+  weight_method = &quot;mean_square&quot;
+)</code></pre>
+<p>Set Parameter Estimation Parameters. For more parameters, copy the <code>defineParameterEstimationParameter()</code> function and append the list, or use the <code>make_pe_param_global()</code> function defined in utils and run it on the parameters you want to add.</p>
+<pre class="r"><code>pe_parameters &lt;- lapply(getGlobalQuantities()$key, make_pe_param_global, lower = 100, upper = 100)</code></pre>
+<p>Set Parameter Estimation Settings.</p>
+<pre class="r"><code>pe_randomize_start_values &lt;- FALSE
+pe_update_model           &lt;- FALSE
+
+pe_method &lt;- setParameterEstimationSettings(
+  method = &quot;LevenbergMarquardt&quot;
+)</code></pre>
+<p>Set Parameter for Profile Likelihood. For more parameters, copy the <code>defineParameterEstimationParameter()</code> function and append the list, or use the <code>make_pe_param()</code> function defined in utils and run it on the parameters you want to add (see above). I want to use the variance as an upper and lower bound.</p>
+<pre class="r"><code># Define beta* and p* as parameters for profile likelihood
+i &lt;- c(6,7)
+
+for (i in i){
+val &lt;- getGlobalQuantities()$initial_value[i]
+pl_parameters &lt;- list(defineParameterEstimationParameter(
+  ref         = getGlobalQuantityReferences(key = getGlobalQuantities()$key[i])$initial_value,
+  start_value = val,
+  lower_bound = val - 1.6*val,
+  upper_bound = val + 1.6*val
+))
+}</code></pre>
+<p>Choose maximum number of steps for Profile Likelihood.</p>
+<pre class="r"><code>max_steps     &lt;- 50</code></pre>
+<p>Do you want to save the result as a RDS object? Also give the file, where you want to save it.</p>
+<pre class="r"><code>save &lt;- TRUE
+file &lt;- &quot;docs/PL_Aston&quot;</code></pre>
+</div>
+<div id="workflow" class="section level1">
+<h1>Workflow</h1>
+<p>This should generally not need to be changed, only if the workflow is to be changed more generally.</p>
+<pre class="r"><code>
+# Run Profile Likelihood
+PL_result &lt;- runProfileLikelihood(
+  model                     = model,
+  pl_parameters             = pl_parameters,
+  max_steps                 = max_steps,
+  pe_parameters             = pe_parameters,
+  pe_experiments            = pe_experiments,
+  pe_method                 = pe_method,
+  pe_update_model           = pe_update_model,
+  pe_randomize_start_values = pe_randomize_start_values
+)
+
+# Save results
+if (save){
+  saveRDS(PL_result, 
+          file = file)
+}</code></pre>
+</div>
+<div id="output" class="section level1">
+<h1>Output</h1>
+<p>This workflow produces the following output:</p>
+<pre class="r"><code>printLikelihoodProfile(PL_result)
+#&gt; [[1]]</code></pre>
+<p><img src="WF_PL_Aston_files/figure-html/unnamed-chunk-12-1.png" width="100%" /></p>
+<div id="utils" class="section level2">
+<h2>Utils</h2>
+<p>Creates a function for easy Parameter Estimation Parameter Usage:</p>
+<pre class="r"><code>make_pe_param  &lt;- function(name, upper, lower) {
+  value_ref &lt;- parameter_strict(name, reference = &quot;Value&quot;)
+  value     &lt;- getValue(value_ref)
+  defineParameterEstimationParameter( ref         = value_ref,
+                                      start_value = value,
+                                      lower_bound = abs(value)*lower,
+                                      upper_bound = abs(value)*upper)
+  
+}
+
+make_pe_param_global &lt;- function(name, upper, lower){
+  value     &lt;- getGlobalQuantities(key = name)$initial_value
+  value_ref &lt;- getGlobalQuantityReferences(key = name)$initial_value
+  defineParameterEstimationParameter(ref         = value_ref,
+                                     start_value = value,
+                                     lower_bound = value-abs(value)*lower,
+                                     upper_bound = value+abs(value)*upper
+                                     )
+  
+}
+
+make_pe_param_global_absolute &lt;- function(name, upper, lower){
+  value     &lt;- getGlobalQuantities(key = name)$initial_value
+  value_ref &lt;- getGlobalQuantityReferences(key = name)$initial_value
+  defineParameterEstimationParameter(ref         = value_ref,
+                                     start_value = value,
+                                     lower_bound = value-lower,
+                                     upper_bound = value+upper)
+  }</code></pre>
+</div>
 </div>
 
 

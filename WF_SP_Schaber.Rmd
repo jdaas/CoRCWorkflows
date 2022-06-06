@@ -87,12 +87,13 @@ measurement_error <- 0.1
 Do you want to save the result as a RDS object? Also give the file, where you want to save it.
 ```{r}
 save <- TRUE
-file <- "SP_Schaber"
+file <- "docs/SP_Schaber"
 ```
 
 # Workflow
 This should generally not need to be changed, only if the workflow is to be changed more generally.
 ```{r}
+# Run Sigma Point Method
 result <-
   runSigmaPoint(
     alpha             = alpha,
@@ -103,8 +104,9 @@ result <-
     mean_fit_as_basis = TRUE
   )
 
+# Save Result
 if (save){
-  saveRDS(PL_result, 
+  saveRDS(result, 
           file = file)
 }
 ```

@@ -272,7 +272,9 @@ $(document).ready(function () {
     <li>
       <a href="WF_PL_Schaber.html">Model 1: Example</a>
     </li>
-    <li class="dropdown-header">Model 2: Hepatitis C</li>
+    <li>
+      <a href="WF_PL_Aston.html">Model 2: Hepatitis C</a>
+    </li>
     <li class="dropdown-header">Model 3: Circadian Clock</li>
   </ul>
 </li>
@@ -286,7 +288,9 @@ $(document).ready(function () {
     <li>
       <a href="WF_SP_Schaber.html">Model 1: Example</a>
     </li>
-    <li class="dropdown-header">Model 2: Hepatitis C</li>
+    <li>
+      <a href="WF_SP_Aston.html">Model 2: Hepatitis C</a>
+    </li>
     <li class="dropdown-header">Model 3: Circadian Clock</li>
   </ul>
 </li>
@@ -300,7 +304,9 @@ $(document).ready(function () {
     <li>
       <a href="WF_Sens_Schaber.html">Model 1: Example</a>
     </li>
-    <li class="dropdown-header">Model 2: Hepatitis C</li>
+    <li>
+      <a href="WF_Sens_Aston.html">Model 2: Hepatitis C</a>
+    </li>
     <li class="dropdown-header">Model 3: Circadian Clock</li>
   </ul>
 </li>
@@ -352,7 +358,7 @@ loadSBML(modelPathSBML)
 <pre class="r"><code>setTimeCourseSettings(duration  = 50,
                       intervals = 100)</code></pre>
 <p>Where should the .jpeg image be saved?</p>
-<pre class="r"><code>jpegPath &lt;- &quot;timecourse.jpeg&quot;</code></pre>
+<pre class="r"><code>jpegPath &lt;- &quot;docs/timecourse.jpeg&quot;</code></pre>
 </div>
 <div id="workflow" class="section level1">
 <h1>Workflow</h1>
@@ -373,7 +379,7 @@ jpeg(jpegPath)
 print(plot)
 dev.off()
 #&gt; quartz_off_screen 
-#&gt;                 2</code></pre>
+#&gt;                 3</code></pre>
 </div>
 <div id="output" class="section level1">
 <h1>Output</h1>
@@ -381,7 +387,7 @@ dev.off()
 <pre class="r"><code># Show the Plot
 plot</code></pre>
 <p><img src="WF_example_files/figure-html/unnamed-chunk-6-1.png" width="100%" /></p>
-<p>and saves the image in the file timecourse.jpeg.</p>
+<p>and saves the image in the file docs/timecourse.jpeg.</p>
 </div>
 
 
