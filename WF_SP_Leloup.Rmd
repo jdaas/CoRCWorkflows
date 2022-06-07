@@ -1,0 +1,126 @@
+---
+title: "Sigma Point: Mammalian Circadian Clock"
+author: "Johanna Daas"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.asp = 10/16,
+  out.width = "100%",
+  error = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+set.seed(1)
+```
+
+# Setup
+First, load the libraries needed for the workflow
+```{r,  message = FALSE}
+library(tidyverse)
+library(CoRC)
+```
+
+# Input
+Put in all variables needed to customise the workflow
+
+
+Put in the path to the model (SBML), as url or local path (as string) and load the model. Use `loadModel()` for .cps models.
+```{r}
+modelPathSBML <- "./Models/Leloup2004Circadian_model.xml"
+loadSBML(modelPathSBML)
+```
+
+Load the data into the variable `data`.
+```{r}
+data <- read.csv("./Data/Leloup2004Circadian_data.csv", sep = "")
+```
+
+Define experiment(s) for Parameter Estimation. For multiple experiments use list of `defineExperiments()`.
+```{r}
+experiment <- defineExperiments(
+  data = data,
+  type = c("time", "dependent", "dependent", "dependent", "dependent", "dependent", "dependent"),
+  mapping = c(NA, getSpeciesReferences(key = c("MP", "MC", "MB", "PTot", "CTot", "BTot"))$concentration),
+  weight_method = "mean_square"
+)
+```
+
+
+
+Set Parameter Estimation Parameters. For more parameters, copy the `defineParameterEstimationParameter()` function and append the list. All parameters in this model are mapped to global Quantities. For Parameter Estimation, the Global Quantities not assigned or with an ode (so only "fixed" global Quantities) are estimated.
+```{r}
+globalQ <- getGlobalQuantities()[getGlobalQuantities()$type == "fixed",]$key
+lapply(globalQ, add_pe_param_global, lower = 100, upper = 100)
+```
+
+Set Parameter Estimation Settings.
+```{r}
+setParameterEstimationSettings(
+  method = "LevenbergMarquardt"
+)
+```
+
+Set Sigma Point Method Settings. Choose alpha, beta, kappa, and the measurement error (var)
+```{r}
+alpha <- 1
+beta <- 2
+kappa <- 0
+measurement_error <- 0.05
+```
+
+Do you want to save the result as a RDS object? Also give the file, where you want to save it.
+```{r}
+save <- TRUE
+file <- "docs/SP_Leloup"
+```
+
+# Workflow
+This should generally not need to be changed, only if the workflow is to be changed more generally.
+```{r, eval=FALSE}
+# Run Sigma Point Method
+result <-
+  runSigmaPoint(
+    alpha             = alpha,
+    beta              = beta,
+    kappa             = kappa,
+    var               = measurement_error,
+    experiments       = experiment,
+    mean_fit_as_basis = TRUE,
+  )
+
+# Save result
+if (save){
+  saveRDS(result, 
+          file = file)
+}
+```
+```{r, echo=FALSE}
+# Do evaluation before rendering (just for display on html)
+result <- readRDS("docs/SP_Leloup")
+```
+
+
+# Output
+This workflow produces the following output:
+```{r}
+result$sp_mean
+result$sp_cov_matrix
+```
+
+# Utils
+```{r}
+add_pe_param_global <- function(name, upper, lower){
+  value     <- getGlobalQuantities(key = name)$initial_value
+  value_ref <- getGlobalQuantityReferences(key = name)$initial_value
+  addParameterEstimationParameter(   ref         = value_ref,
+                                     start_value = value,
+                                     lower_bound = value-value*lower,
+                                     upper_bound = value+value*upper)
+}
+```
+
